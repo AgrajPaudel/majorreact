@@ -1,5 +1,6 @@
+import { scales } from "chart.js";
 import React, { useState } from "react";
-import { Line } from "react-chartjs-2";
+import { Line, Scatter } from "react-chartjs-2";
 import Select from "react-select";
 
 const colors = [
@@ -33,23 +34,64 @@ const bankDataMap = {};
 
 
 const generateGraph = (selectedBanks) => {
+  // Collect unique quarter values across all selected banks
+  const allQuarters = selectedBanks.reduce((quarters, bank) => {
+    const bankQuarters = bankDataMap[bank].data.map((item) => item.quarter);
+    return [...new Set([...quarters, ...bankQuarters])];
+  }, []);
+
   // Prepare data for selected banks
-  const datasets = selectedBanks.map((bank, index) => ({
-    label: bank,
-    data: bankDataMap[bank].data.map((item) => item.value),
-    fill: false,
-    borderColor: colors[index % colors.length], // Use modulo to cycle through colors
-    tension: 0.1,
-    key: index, // Adding a unique key for each dataset
-  }));
+  const datasets = selectedBanks.map((bank, index) => {
+    const dataPoints = bankDataMap[bank].data
+      .map((item) => ({
+        x: allQuarters.indexOf(item.quarter),
+        y: parseFloat(item.value) || 0,
+      }))
+      .filter((point) => !isNaN(point.y));
+
+    return {
+      label: bank,
+      data: dataPoints,
+      backgroundColor: colors[index % colors.length],
+      pointRadius: 6,
+      key: index,
+    };
+  });
 
   const data = {
-    labels: bankDataMap[selectedBanks[0]].data.map((item) => item.quarter),
     datasets,
   };
 
-  return <Line data={data} />;
+  const options = {
+    scales: {
+      x: {
+        type: 'linear',
+        position: 'bottom',
+        ticks: {
+          stepSize: 1,
+          callback: (value, index) => allQuarters[index], // Use quarter values for ticks
+        },
+      },
+    },
+    plugins: {
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            const label = allQuarters[context.dataIndex];
+            const value = context.dataset.data[context.dataIndex].y;
+            return `${label}: ${value}`;
+          },
+        },
+      },
+    },
+  };
+
+  return <Scatter data={data} options={options} />;
 };
+
+
+
+
 
 function CreateLineChart( graphDataList ) {
   console.log(graphDataList)

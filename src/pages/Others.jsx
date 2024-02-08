@@ -15,9 +15,11 @@ const Others = () => {
   const [quarterList, setQuarterList] = useState([]);
   
   
+  
 
   // State for the new quarter dropdown
   const [selectedQuarterForInput, setSelectedQuarterForInput] = useState(null);
+  const [selectedQuarterForriskinput, setSelectedQuarterForriskinput] = useState(null);
 
   // State for the extracted row headers
   const [variables, setvariablesList] = useState([]);
@@ -161,6 +163,39 @@ useEffect(() => {
     }
   };
 
+
+  const handleRunRiskAnalysisforinput = async () => {
+    try {
+      var access_token='z outp';
+      const requestParams = {
+        quarter: selectedQuarterForriskinput,
+        filepath: 'D:/python tesseract/'+access_token+'/z output/z_scores.csv',
+        access_token: 'z outp', // Replace with the actual access token
+      };
+  
+      console.log('Sending JSON to Python:', JSON.stringify(requestParams));
+  
+      const response = await fetch('/run-risk-analysis-input', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestParams),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log(result); // Access the JSON response
+        // ... rest of the code
+      } else {
+        console.error('Error calling the API');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+
   const handleRunOutlierfromInput = async () => {
     try {
       const requestParams = {
@@ -303,11 +338,34 @@ const handleRunOutlierFromExisting = async () => {
           </option>
         ))}
       </select>
+
       <button onClick={handleRunRiskAnalysis} 
       style={{ display: 'block', marginBottom: '10px' }}
       disabled={!selectedQuarter1 || !selectedBank1}>
         Run Risk Analysis
       </button>
+
+      {/* New Quarter Dropdown for "risk analysis from Input" */}
+      <label>Select Quarter for Input:</label>
+      <select
+        value={selectedQuarterForriskinput}
+        onChange={(e) => setSelectedQuarterForriskinput(e.target.value)}
+        style={{ marginBottom: "10px" }}
+      >
+        <option value="">Select Quarter for Input</option>
+        {quarterList.map((quarter, index) => (
+          <option key={index} value={quarter}>
+            {quarter}
+          </option>
+        ))}
+      </select>
+
+      <button onClick={handleRunRiskAnalysisforinput} 
+      style={{ display: 'block', marginBottom: '10px' }}
+      disabled={!selectedQuarterForriskinput}>
+        Run Risk Analysis for input
+      </button>
+
       
       {/* New Quarter Dropdown for "Quarter from Input" */}
       <label>Select Quarter for Input:</label>

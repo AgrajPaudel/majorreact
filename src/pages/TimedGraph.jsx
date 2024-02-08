@@ -1,19 +1,21 @@
 import React,{useState,useEffect} from "react";
 import TestNavbar from "../component/TestNavBar";
 import BanklistData from "../component/banklist.js";
-import { Line } from "react-chartjs-2";
+
 //here is new:
 import "D:/majorproject-master/src/component/GraphTest-master/src/styles.css";
-import D3Chart from "D:/majorproject-master/src/component/GraphTest-master/src/Axis";
-import Chart from "D:/majorproject-master/src/component/GraphTest-master/src/ZoomGraph";
-import LineChart from "D:/majorproject-master/src/component/GraphTest-master/src/LineChart";
-import Map from "D:/majorproject-master/src/component/GraphTest-master/src/Map";
-import Charto from "D:/majorproject-master/src/component/GraphTest-master/src/delete";
-import LineChartoo from "D:/majorproject-master/src/component/GraphTest-master/src/nextwebsiteChart";
-import LineChartoss from "D:/majorproject-master/src/component/GraphTest-master/src/FinalGraph";
-import GraphData  from "../class/classes.js";
+import { Modal } from "react-bootstrap";
+import LineChartoo from "D:/majorproject-master/src/component/GraphTest-master/src/nextwebsiteChart"; //this shit useful 
 
+//line
+import GraphData  from "../class/classes.js";
 import CreateLineChart from "../component/GraphTest-master/src/function/graph_functions.js";
+//scatter
+import ScatterPlotData from "../class/scatter_class.js";
+import CreateScatterPlot from "../component/GraphTest-master/src/function/scatter_function.js";
+import processQuarters from "../component/GraphTest-master/src/function/scatter_nan.js";
+import banklist from "../component/banklist.js";
+import GenerateGraph from "../component/GraphTest-master/src/function/combiner_function.js";
 
 
 export default function TimedGraph() {
@@ -26,7 +28,10 @@ export default function TimedGraph() {
   const [isLoading, setIsLoading] = useState(false);
   const [complete,setcomplete]=useState(false);
   const [soloBank, setSoloBank] = useState([]);
+  
+
   var list_of_data=[];
+  var scatter_data=[];
   //////
   // State for the quarter list obtained from extract-column-header
   const [quarterList, setQuarterList] = useState([]);
@@ -39,6 +44,21 @@ export default function TimedGraph() {
   // State for the extracted row headers
   const [variables, setvariablesList] = useState([]);
   const [selectedvariableforOutput, setSelectedVariableForOutput] = useState(null);
+  //for scatterplot
+  const [scatterplotdata, setscatterplotdata]=useState(null);
+  const [scattercomplete,setscattercomplete]=useState(false);
+
+  
+
+  //dialog box
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+ 
+
+  const closeModal = () => {
+    // Close the modal
+    setIsModalOpen(false);
+  };
 
 
   ////////////
@@ -153,6 +173,10 @@ useEffect(() => {
   setcomplete(true);
 }, [linechartdata]); // Trigger the effect when linechartdata changes
 
+useEffect(() => {
+  
+  setscattercomplete(true);
+}, [scatterplotdata]); // Trigger the effect when scatterplot changes
 
 
   const handleRunBankAndQuarterFromExisting = async () => {
@@ -332,7 +356,9 @@ useEffect(() => {
   
   
   const handleRunVariablefromInput = async () => {
+    
     try {
+      
       if (!selectedvariableforOutput) {
         console.error("Please select a row header");
         return;
@@ -365,7 +391,23 @@ useEffect(() => {
         // Display the result in your component as needed
         console.log(result);
         setresults(result);
-        console.log(results);
+        const holder=processQuarters(result,BanklistData.quarterlist);
+
+        const newresult={
+          quarter : holder.quarters,
+          values : holder.values,
+          bank: 'Input Data',
+          variable: setSelectedVariableForOutput
+        };
+        const scatterinstance=new GraphData('Input Data','ScatterPlot',
+        newresult,
+        setSelectedVariableForOutput,
+        );
+        scatter_data.push(scatterinstance);
+
+       
+      
+      
   
         // Add your logic here to handle the result, update state, or perform any other actions
         // For example, you might want to setState or dispatch an action in a Redux store
@@ -379,10 +421,39 @@ useEffect(() => {
         // Handle the case where the API call was not successful
         console.error('Error calling the API');
       }
+
+      
+      var y=scatter_data;
+      console.log(y);
+
+
+      
+      setscatterplotdata(prevData => {
+        return y;
+      });
+      
+
+
     } catch (error) {
       // Handle any errors that occur during the API call
       console.error('Error:', error);
     }
+  };
+
+
+
+  const handleruncombine = async () => {
+    if(selectedvariableforOutput!==selectedMetric){
+      setIsModalOpen(true);
+      return;
+    }
+
+    setIsLoading(true);
+
+
+
+
+   console.log('combine');
   };
 
   
@@ -459,6 +530,8 @@ useEffect(() => {
 
       {/* Render the Line Chart based on the resultData */}
     {linechartdata && complete && <CreateLineChart data={linechartdata} />}
+
+    
       
       {/* New Quarter Dropdown for "Quarter from Input" */}
       <label>Select Quarter for Input:</label>
@@ -510,6 +583,46 @@ useEffect(() => {
       >
         Variable from Input
       </button>
+
+
+      {/* Render the Scatter Plot based on the scatterplotData */}
+      {scatterplotdata && scattercomplete && <CreateScatterPlot data={scatterplotdata} />}
+
+      
+      {/* Button to run the API call for Variable from Input */}
+<button
+  onClick={handleruncombine}
+  style={{
+    display: (selectedvariableforOutput && selectedMetric && scatterplotdata && linechartdata) ? 'block' : 'none',
+    marginBottom: "10px",
+  }}
+  disabled={!selectedvariableforOutput || !selectedMetric || !scatterplotdata || !linechartdata}
+>
+  Combine Graph
+</button>
+
+{/* Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onRequestClose={closeModal}
+        contentLabel="Variable Mismatch"
+      >
+        <h2>Variable Mismatch</h2>
+        <p>
+          The selected variable for output does not match the selected metric.
+        </p>
+        <button onClick={closeModal}>OK</button>
+      </Modal>
+
+
+      {linechartdata && complete && scattercomplete && scatterplotdata && isLoading && (
+  <GenerateGraph lineData={linechartdata} scatterData={scatterplotdata} />
+)}
+
+
+      
+
+
         {/*table here*/}
         
         <table className="table-custom">

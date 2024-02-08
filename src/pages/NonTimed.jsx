@@ -1,10 +1,21 @@
 import React,{useState,useEffect} from "react";
 import TestNavbar from "../component/TestNavBar";
 import BanklistData from "../component/banklist.js";
+import BarChartData from "../class/bar_class.js";
+import CreateBarChart from "../component/GraphTest-master/src/function/bar_function.js";
 export default function NonTimed() {
 
   const [selectedQuarter1, setSelectedQuarter1] = useState(null);
   const [selectedMetric, setSelectedMetric] = useState(null);
+   //for bar graph
+   const [bargraphdata, setbargraphdata]=useState(null);
+   const [barcomplete,setbarcomplete]=useState(false);
+   var bardata=[];
+
+   useEffect(() => {
+  
+    setbarcomplete(true);
+  }, [bargraphdata]); // Trigger the effect when bargraphdata changes
 
   const handleRunBankAndVariableFromExisting = async () => {
 
@@ -36,10 +47,17 @@ export default function NonTimed() {
       // Check if the response is successful (status code 200)
       if (response.ok) {
         // Parse the response as text
-        const result = await response.text();
+        const result = await response.json();
   
         // Display the result in your component as needed
         console.log(result);
+
+        const barinstance=new BarChartData(result.bank,'Bargraph',
+        result,
+        selectedMetric,
+        selectedQuarter1
+        );
+        bardata.push(barinstance);
   
         // Add your logic here to handle the result, update state, or perform any other actions
         // For example, you might want to setState or dispatch an action in a Redux store
@@ -53,6 +71,12 @@ export default function NonTimed() {
         // Handle the case where the API call was not successful
         console.error('Error calling the API');
       }
+
+      var y=bardata;
+      console.log(y);
+      setbargraphdata(prevData => {
+        return y;
+      });
     } catch (error) {
       // Handle any errors that occur during the API call
       console.error('Error:', error);
@@ -96,6 +120,9 @@ export default function NonTimed() {
       <button onClick={handleRunBankAndVariableFromExisting} style={{ display: 'block', marginBottom: '10px' }} disabled={!selectedQuarter1 || !selectedMetric}>
         Bank and Variable From Existing
       </button>
+
+      {/* Render the bar Plot based on the scatterplotData */}
+      {bargraphdata && barcomplete && <CreateBarChart data={bargraphdata} />}
     </div>
   );
 }

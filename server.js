@@ -16,7 +16,8 @@ const executeVariableFromInput=require('./variable_from_input.js')
 const executeExtractRowHeader=require('./extract_row_header.js')
 const executeExtractColumnHeader=require('./extract_column_headers.js')
 const executeWorkOnInput=require('./work_on_input.js')
-const executeuploadpdf=require('./pdf_to_place.js')
+const executeuploadpdf=require('./pdf_to_place.js');
+const executeRiskAnalysisInput = require('./risk_analysis_input.js');
 const app = express();
 const port = 5000;
 
@@ -208,6 +209,25 @@ app.post('/run-risk-analysis', (req, res) => {
     res.status(500).send(errorMessage);
   }
 });
+
+//run risk analysis on input
+
+app.post('/run-risk-analysis-input', (req, res) => {
+  const requestParams = req.body;
+  
+  
+
+  try {
+    const outputData = executeRiskAnalysisInput(requestParams);
+    console.log(`Python script output: `, outputData);
+    res.status(200).json(outputData);  // Sending the Python script output as JSON response
+  } catch (error) {
+    const errorMessage = `Error: ${error.message}`;
+    console.error(errorMessage);
+    res.status(500).send(errorMessage);
+  }
+});
+
 
 //for outlier from input
 app.post('/outlier-from-input', (req, res) => {
