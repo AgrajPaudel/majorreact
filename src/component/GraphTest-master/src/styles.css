@@ -1,0 +1,11 @@
+.App {
+  font-family: sans-serif;
+  text-align: center;
+}
+.box {
+  margin-left: 500px;
+  margin-top: 200px;
+}
+.xaxis {
+  margin-top: 10px;
+}

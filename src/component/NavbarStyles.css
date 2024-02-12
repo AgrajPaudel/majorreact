@@ -1,0 +1,43 @@
+.navbar-custom {
+  background-color: #569bcd; /* Custom background color */
+  color: #fff; /* Custom text color */
+  font-family: "Roboto", sans-serif;
+  font-size: 1.1rem;
+}
+
+/* Adjust padding to make spacing equal */
+.navbar-custom .navbar-nav {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  text-align: center;
+}
+
+/* Customize link styles */
+.navbar-custom .nav-link {
+  color: #fff !important; /* Custom link text color */
+  padding: 1rem; /* Add padding for better spacing */
+  transition: background-color 0.3s ease; /* Add transition effect */
+}
+
+/* Change link color on hover */
+.navbar-custom .nav-link:hover {
+  background-color: #6faed6;
+  background-color: #6faed6; /* Custom hover background color */
+  border-radius: 10px; /* Add rounded corners */
+  padding: 0.8rem; /* Custom hover background color */
+}
+
+/* Brand link styles */
+.navbar-custom .navbar-brand {
+  color: #fff !important; /* Custom brand text color */
+  font-weight: bold; /* Make brand text bold */
+}
+
+a {
+  flex: auto;
+  font-size: 3rem;
+}
+a:first-child {
+  margin-left: 5%;
+}

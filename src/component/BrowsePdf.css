@@ -1,0 +1,18 @@
+/* BrowsePdf.css */
+.pdf-container {
+  padding-left: 100px;
+  padding-top: 100px;
+  max-height: 700px;
+}
+.react-pdf__Page__canvas {
+  /*this is to move the preview */
+  display: block;
+  margin-left: 490px;
+  margin-top: -100px;
+  border: solid;
+}
+.container2 {
+  margin-top: 50px;
+  margin-left: 130px;
+  margin-right: 130px;
+}
