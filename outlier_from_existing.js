@@ -32,13 +32,16 @@ function executeOutlierAnalysisExisting(requestParams) {
             
             // Parse and return the content with the modified structure
             const resultContent = JSON.parse(fileContent);
-
+            console.log(resultContent)
             const modifiedResult = {
                 variables: [],
                 'z score compared to all quarters from all banks': [],
                 'z score compared to all banks in given quarter': [],
                 'z score compared to all quarters of given bank': [],
-                outlier: []
+                outlier: [],
+                totals_mean: [],
+                quarters_mean: [],
+                self_value: [],
             };
 
             // Iterate over each instance in resultContent
@@ -47,7 +50,10 @@ function executeOutlierAnalysisExisting(requestParams) {
                 modifiedResult['z score compared to all quarters from all banks'].push(instance.values[0]);
                 modifiedResult['z score compared to all banks in given quarter'].push(instance.values[1]);
                 modifiedResult['z score compared to all quarters of given bank'].push(instance.values[2]);
+                modifiedResult.totals_mean.push(instance.totals_mean);
+                modifiedResult.quarters_mean.push(instance.quarter_mean);
                 modifiedResult.outlier.push(instance.outlier);
+                modifiedResult.self_value.push(instance.self_value);
             });
             modifiedResult['bank']=bank;
             modifiedResult['quarter']=quarter;

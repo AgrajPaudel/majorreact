@@ -30,9 +30,9 @@ function executeQuarterFromInput(requestParams) {
         // Delete the file after reading its content
         fs.unlinkSync(resultFilePath);
   
-        // Parse and return the content
+        // Parse and return the content  
         const resultContent = JSON.parse(fileContent);
-
+        console.log(resultContent);
         // Check if resultContent is an array before using map
         const modifiedResult = Array.isArray(resultContent)
           ? {

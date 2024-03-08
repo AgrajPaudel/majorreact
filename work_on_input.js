@@ -6,7 +6,6 @@ function Workoninput(requestParams) {
     const { quarters, banks, filepath, variable, quarter, bank, filename, access_token, pythonscriptpath } = requestParams;
     const functionname = 'work_on_input';
   
-    // Replace 'python' with 'python3' or 'python' based on your system
     const pythonScriptPath = pythonscriptpath || 'D:/python tesseract/main.py';
     
     // Print the JSON data being sent to Python in the console
@@ -26,7 +25,7 @@ function Workoninput(requestParams) {
         // Read the generated JSON file
         const resultFilePath = `D:/python tesseract/${access_token}/z output/input_work.json`;
         const fileContent = fs.readFileSync(resultFilePath, 'utf-8');
-        modifiedResult=fileContent;
+        var modifiedResult=fileContent;
         // Delete the file after reading its content
         fs.unlinkSync(resultFilePath);
   

@@ -37,7 +37,11 @@ function executeOutlierAnalysisInput(requestParams) {
                 variables: resultContent.map(entry => entry.variable),
                 'z score compared to all quarters of all banks': resultContent.map(entry => entry.values[0]),
                 'z score compared to all banks in this quarter': resultContent.map(entry => entry.values[1]),
-                outlier: resultContent.map(entry => entry.outlier)
+                outlier: resultContent.map(entry => entry.outlier),
+                totals_mean: resultContent.map(entry => entry.totals_mean),
+                quarter_mean:resultContent.map(entry => entry.quarter_mean),
+                self_value :resultContent.map(entry => entry.self_value),
+
             };
             modifiedResult['quarter']=quarter;
             

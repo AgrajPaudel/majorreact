@@ -85,7 +85,7 @@ export default function NonTimed() {
   
   return (
     <div>
-      <TestNavbar></TestNavbar>
+      
       <h1>this is the non timedddgraph</h1>
       {/* Quarter Dropdown */}
       <label>Select Quarter:</label>

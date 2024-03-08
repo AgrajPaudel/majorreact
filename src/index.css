@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.table-custom {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-custom th,
+.table-custom td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.table-custom th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+.table-custom tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.table-custom tr:hover {
+  background-color: #ddd;
+}
+option {
+  padding: 8px 12px;
+  transition: background-color 0.3s ease;
+}
+
+/* Hover effect */
+option:hover {
+  background-color: #f0f0f0;
+}
+
+.react-pdf__Page__annotations {
+  display: none;
+}
+
+.annotationLayer {
+  display: none;
+}

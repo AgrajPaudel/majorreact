@@ -29,9 +29,11 @@ function executeRiskAnalysisExisting(requestParams) {
             
             // Delete the file after reading its content
             fs.unlinkSync(resultFilePath);
+
             
             // Parse and return the content with the modified structure
             const resultContent = JSON.parse(fileContent);
+            console.log(resultContent);
 
             const modifiedResult = {};
             Object.keys(resultContent).forEach((key, index) => {

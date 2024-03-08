@@ -1,7 +1,14 @@
 import React,{useState,useEffect} from "react";
+import "./tooltip.css";
 import TestNavbar from "../component/TestNavBar";
 import BanklistData from "../component/banklist.js";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
+import cleaner from "../cleaner_functions.js"
+import percentileData from '../percentile.json';
+import { fa } from "faker/lib/locales.js";
+import NormalDistributionChart from "../component/GraphTest-master/src/function/z_score_function.js";
+import ZScoreChart from "../component/GraphTest-master/src/function/z_score_function.js";
+import ZscoreGraph from "../component/GraphTest-master/src/function/z_score_function.js";
 
 const Others = () => {
   const tooltips = [
@@ -54,6 +61,7 @@ const Others = () => {
 
   // State for the quarter list obtained from extract-column-header
   const [quarterList, setQuarterList] = useState([]);
+  const [knncomplete,setknncomplete] =useState(false);
   
   
   
@@ -72,6 +80,26 @@ const Others = () => {
   const [outlierData, setOutlierData] = useState([]);
   //for outlier input
   const [inputOutlierData, setInputOutlierData] = useState([]);
+  const [inputRiskData, setInputRiskData] = useState([]);
+  //for knn:
+  const [knndata, setknndata] = useState([]);
+
+
+  function findSuccessor(inputStr, list) {
+    console.log(inputStr);
+    console.log(list);
+    // Find the index where the input string falls in the list
+    const index = list.findIndex(element => element === inputStr);
+    console.log(list[index]);
+    console.log(index);
+    // If the input string exists in the list, return its successor
+    if (index !== -1 && index < list.length - 1) {
+        return list[index + 1];
+    } else {
+        return '';
+    }
+}
+
 
   ////////////
 const handleRunExtractRowHeader = async () => {
@@ -169,6 +197,56 @@ const handleRunExtractColumnHeader = async () => {
   }
 };
 
+
+
+function getPercentileNumber(zScore) {
+  if (zScore === 'nan') {
+    return '';
+  }
+
+  console.log('zScore=', zScore);
+  const sortedPercentiles = percentileData.percentiles.sort((a, b) => a.zScore - b.zScore);
+
+  // If z score is smaller than the lowest z score in the JSON data, return 0%
+  if (zScore < sortedPercentiles[0].zScore) {
+    return '0%';
+  }
+
+  // If z score is larger than the largest z score in the JSON data, return 100%
+  if (zScore > sortedPercentiles[sortedPercentiles.length - 1].zScore) {
+    return '100%';
+  }
+
+  // Find the nearest lower and upper z scores
+  let lowerPercentile = null;
+  for (const percentile of sortedPercentiles) {
+    if (percentile.zScore <= zScore) {
+      lowerPercentile = percentile;
+    } else {
+      break; // Stop iteration once we find the upper z score
+    }
+  }
+  console.log(lowerPercentile.percentile);
+  // Return the percentile of the higher z score
+  return `${lowerPercentile.percentile}%`;
+}
+
+
+function formatNumberToDecimalPlaces(number, decimalPlaces) {
+  // Check if the number is valid
+  if (isNaN(number)) {
+      return 'Invalid number';
+  }
+
+  // Round the number to the specified decimal places
+  const roundedNumber = Math.round(number * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces);
+
+  // Convert the rounded number to a string with fixed decimal places
+  return roundedNumber.toFixed(decimalPlaces);
+}
+
+
+
 ////////
 
 // useEffect to run when the component mounts
@@ -236,7 +314,7 @@ useEffect(() => {
       if (response.ok) {
         const result = await response.json();
         console.log(result); // Access the JSON response
-        
+        setInputRiskData(result);
         // ... rest of the code
       } else {
         console.error('Error calling the API');
@@ -265,13 +343,15 @@ useEffect(() => {
       });
 
       if (response.ok) {
-        const result = await response.text();
+        const result = await response.json();
         console.log(result); // Access the response as text
         setInputOutlierData(result);
         // ... rest of the code
       } else {
         console.error('Error calling the API');
       }
+
+
     } catch (error) {
       console.error('Error:', error);
     }
@@ -294,8 +374,152 @@ const handleRunKnnOutput = async () => {
     });
 
     if (response.ok) {
-      const result = await response.text();
+      const result = await response.json();
       console.log(result); // Access the response as text
+      
+      setknndata(result);
+      setknncomplete(true);
+      const currentdata = Object.keys(result).map(quarter => {
+        const firstQuarter = result[quarter]['1st data'];
+        const successorQuarter = firstQuarter.quarter;
+        console.log('bkkjsaddsa',firstQuarter.bank);
+        return {
+            bank: firstQuarter.bank,
+            quarter: successorQuarter
+        };
+    });
+      const newData = Object.keys(result).map(quarter => {
+        const firstQuarter = result[quarter]['1st data'];
+        const successorQuarter = findSuccessor(firstQuarter.quarter, BanklistData.quarterlist);
+        console.log('bkkjsaddsa',firstQuarter.bank);
+        return {
+            bank: firstQuarter.bank,
+            quarter: successorQuarter
+        };
+    });
+    const olddata_searched=[];
+    const newdata_searched=[];
+    for(let i=0;i<newData.length;i++){
+      const requestParams = {
+        access_token: "z outp", // Replace with the actual access token
+        quarter: newData[i].quarter,
+        bank: newData[i].bank,
+      };
+
+      const response = await fetch("/bank-and-quarter-from-existing", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestParams),
+      });
+      const result =await response.json();
+      newdata_searched.push(result);
+    }
+
+    for(let i=0;i<currentdata.length;i++){
+      const requestParams = {
+        access_token: "z outp", // Replace with the actual access token
+        quarter: currentdata[i].quarter,
+        bank: currentdata[i].bank,
+      };
+
+      const response = await fetch("/bank-and-quarter-from-existing", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestParams),
+      });
+      const result=await response.json();
+      olddata_searched.push(result);
+    }
+
+    console.log('adsdsdasdas');
+    console.log(olddata_searched);
+    console.log('adsdsdasdas');
+    console.log(newdata_searched);
+    console.log('adsdsdasdas');
+
+    const variance = [];
+    
+
+for (let i = 0; i < olddata_searched.length; i++) {
+    const oldInstance = olddata_searched[i];
+    const newInstance = newdata_searched[i];
+    console.log(oldInstance);
+    console.log(oldInstance.JSON);
+    console.log(oldInstance.value)
+    console.log(oldInstance.variable)
+    console.log(oldInstance.quarter)
+
+    const varianceInstance = {
+        variable: oldInstance.variable, // Assuming variable property exists in oldInstance and newInstance
+        values: [],
+        quarter: newInstance.quarter,
+    };
+
+    // Check if both old and new instances have the same number of values
+    if (oldInstance.values.length !== newInstance.values.length) {
+        console.error(`Error: Mismatch in the number of values for ${oldInstance.variable}`);
+        continue; // Skip this instance if there's a mismatch
+    }
+
+    // Calculate variance for each corresponding pair of values
+    for (let j = 0; j < oldInstance.values.length; j++) {
+        const oldValue = oldInstance.values[j];
+        const newValue = newInstance.values[j];
+
+        const percentVariance = ((newValue - oldValue) / oldValue) * 100;
+        varianceInstance.values.push(percentVariance);
+    }
+
+    variance.push(varianceInstance);
+    
+}
+
+console.log(variance);
+
+////////////////yeta nira
+const input_data_for_knn=[];
+for(let i=0;i<quarterList.length;i++){
+  const requestParams = {
+    access_token: "z outp", // Replace with the actual access token
+    quarter: quarterList[i],
+    filename: 'merged_file.csv',
+  };
+
+  const response = await fetch("/quarter-from-input", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(requestParams),
+  });
+  const result=await response.json();
+  input_data_for_knn.push(result);
+
+}
+console.log('input data',input_data_for_knn);
+
+const predicted_data=[];
+
+    for(let i=0;i<variance.length;i++){
+      const variance_instance=variance[i];
+      const old_instance=olddata_searched[i]
+      const predicted_data_instance={
+        variable: variance_instance.variable,
+        quarter: variance_instance.quarter,
+        values: [],
+      }
+
+      for(let i=0;i<variance_instance.values.length;i++){
+        predicted_data_instance.values.push(old_instance.values[i]*(1+variance_instance.values[i]/100));
+      }
+      predicted_data.push(predicted_data_instance);
+
+    }
+    console.log(predicted_data);
 
     } else {
       console.error('Error calling the API');
@@ -331,7 +555,7 @@ const handleRunOutlierFromExisting = async () => {
     // Check if the response is successful (status code 200)
     if (response.ok) {
       // Parse the response as text
-      const result = await response.text();
+      const result = await response.json();
 
       // Display the result in your component as needed
       console.log(result);
@@ -360,13 +584,30 @@ const renderTooltip = (index) => (
   </Tooltip>
 );
 
+const renderTooltipzscore = (index, value) => {
+  
+  return (
+    <Tooltip id={`tooltip-${index}`} placement="right" className="custom-tooltip-style">
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ marginBottom: '10px' }}>Falls under {getPercentileNumber(value) } from left.</div>
+        <div style={{ width: '400px', height: '400px' }}>
+          <ZScoreChart value={value} />
+        </div>
+      </div>
+    </Tooltip>
+  );
+};
+
+
+
+
 
 
 
 
 return (
   <div className=" my-10 container">
-    <TestNavbar></TestNavbar>
+    
     {/* Quarter Dropdown */}
     <div className="flex gap-x-16">
       <div className="flex flex-col gap-y-2">
@@ -523,7 +764,7 @@ return (
       Outlier from existing
     </button>
     {/* inputOutlierData["z score compared to all banks in this quarter"] */}
-    {outlierData && outlierData.variables && outlierData.quarter && (
+    {inputOutlierData && inputOutlierData.variables && inputOutlierData.quarter && (
       <div className="my-5 w-full h-[500px] overflow-scroll">
         <h1 className="my-3">
           Table from the given input {inputOutlierData.quarter}.
@@ -532,8 +773,11 @@ return (
           <thead className="sticky top-0 bg-white">
             <tr>
               <th>Variable</th>
-              <th>z score compared to all quarters of all banks</th>
-              <th>z score compared to all banks in this quarter</th>
+              <th>Value</th>
+              <th>Mean for this quarters</th>
+              <th>Z score in this quarter</th>
+              <th>Mean for all quarters</th>
+              <th>Z score in all quarters</th>
               <th>Outlier</th>
             </tr>
           </thead>
@@ -543,33 +787,49 @@ return (
               inputOutlierData.quarter &&
               inputOutlierData.variables.map((x, index) => (
                 <tr key={index}>
-                  <td>{x}</td>
-                  <td>
+                  <td>{
                     <OverlayTrigger
-                      placement="right"
-                      delay={{ show: 250, hide: 400 }}
-                      overlay={renderTooltip(index)}
-                    >
-                      <span>
-                        {
-                          inputOutlierData[
-                            "z score compared to all quarters of all banks"
-                          ][index]==='nan'? '-':inputOutlierData[
-                            "z score compared to all quarters of all banks"
-                          ][index]
-                        }
-                      </span>
+                    placement="right"
+                    delay={{ show: 250, hide: 400 }}
+                    overlay={renderTooltip(index)}
+                  >
+                    <span>{cleaner.capitalizeFirstLetter(x)}</span>
                     </OverlayTrigger>
+                  }</td>
+                  <td>{cleaner.addCommasToNumber(formatNumberToDecimalPlaces(inputOutlierData.self_value[index],3))}</td>
+                  <td>{cleaner.addCommasToNumber(formatNumberToDecimalPlaces(inputOutlierData.quarter_mean[index],3))}</td>
+                  <td>
+  <OverlayTrigger
+    placement="right"
+    delay={{ show: 250, hide: 400 }}
+    overlay={renderTooltipzscore(index, inputOutlierData['z score compared to all banks in this quarter'][index])}
+  >
+    <span>
+      {inputOutlierData['z score compared to all banks in this quarter'][index]==='nan'?'-':formatNumberToDecimalPlaces(inputOutlierData['z score compared to all banks in this quarter'][index], 4)}
+    </span>
+  </OverlayTrigger>
+</td>
+                  <td>
+                    {inputOutlierData.totals_mean[index]}
                   </td>
                   <td>
+                  <OverlayTrigger
+    placement="right"
+    delay={{ show: 250, hide: 400 }}
+    overlay={renderTooltipzscore(index, inputOutlierData['z score compared to all quarters of all banks'][index])}
+  >
+                    <span>
                     {
                       inputOutlierData[
-                        "z score compared to all banks in this quarter"
-                      ][index]==='nan'? '-':inputOutlierData[
-                        "z score compared to all banks in this quarter"
-                      ][index]
+                        "z score compared to all quarters of all banks"
+                      ][index]==='nan'? '-':formatNumberToDecimalPlaces(inputOutlierData[
+                        "z score compared to all quarters of all banks"
+                      ][index],4)
                     }
+                    </span>
+                    </OverlayTrigger>
                   </td>
+                  
                   <td
                     className={`border-[1px] ${
                       x === false ? "text-red-500" : "text-green-500"
@@ -584,135 +844,77 @@ return (
       </div>
     )}
 
-    {riskData && riskData.quarter && riskData.bank && (
-      <div>
+{riskData && riskData.bank && riskData.quarter && (
+    <div>
         <table className="table-custom w-150 p-3">
-          <tr>
-            <th>Prameters</th>
-            <th>Value</th>
-          </tr>
-          <tr>
-            <td>Quarter</td>
-            <td>{riskData.quarter}</td>
-          </tr>
-          <tr>
-            <td>Bank</td>
-            <td>{riskData.bank}</td>
-          </tr>
-          <tr>
-            <td>index compared to all quarters from all banks</td>
-            <td>
-              {riskData["index compared to all quarters from all banks"]}
-            </td>
-          </tr>
-          <tr>
-            <td>index compared to all bank data in given quarter</td>
-            <td>
-              {riskData["index compared to all bank data in given quarter"]}
-            </td>
-          </tr>
-          <tr>
-            <td>index compared to all quarters within this bank</td>
-            <td>
-              {riskData["index compared to all quarters within this bank"]}
-            </td>
-          </tr>
+            <thead>
+                <tr>
+                    <th>Bank</th>
+                    <th>Quarter</th>
+                    <th>Index compared to all quarters from all banks</th>
+                    <th>Index compared to all bank data in given quarter</th>
+                    <th>Index compared to all quarters within this bank</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{riskData.bank}</td>
+                    <td>{riskData.quarter}</td>
+                    <td>
+                        {["Capital Adequacy:", "Assets:", "Management Capability:", "Earnings:", "Liquidity:", "Sensitivity:"].map((item, index) => (
+                            <div key={index}>{item} {riskData["index compared to all quarters from all banks"][index]}</div>
+                        ))}
+                    </td>
+                    <td>
+                        {["Capital Adequacy:", "Assets:", "Management Capability:", "Earnings:", "Liquidity:", "Sensitivity:"].map((item, index) => (
+                            <div key={index}>{item} {riskData["index compared to all bank data in given quarter"][index]}</div>
+                        ))}
+                    </td>
+                    <td>
+                        {["Capital Adequacy:", "Assets:", "Management Capability:", "Earnings:", "Liquidity:", "Sensitivity:"].map((item, index) => (
+                            <div key={index}>{item} {riskData["index compared to all quarters within this bank"][index]}</div>
+                        ))}
+                    </td>
+                </tr>
+            </tbody>
         </table>
-      </div>
-    )}
+    </div>
+)}
 
-    {/* <div className="w-full h-[400px] overflow-scroll">
-      {outlierData.variables && (
-        <div className="flex mt-8 ">
-          <div>
-            <h1 className="text-center " style={{ height: "3.8rem" }}>
-              Variables
-            </h1>
-            <ul className=" w-72">
-              {outlierData &&
-                outlierData.variables &&
-                outlierData.variables.map((variable, index) => (
-                  <li key={index} className="border-b ">
-                    {variable}
-                  </li>
-                ))}
-            </ul>
-          </div>
-          <div>
-            <h1
-              className="text-center px-2"
-              style={{ height: "3.8rem", fontSize: "1rem" }}
-            >
-              z score compared to all quarters from all banks
-            </h1>
-            <ul>
-              {outlierData &&
-                outlierData[
-                  "z score compared to all quarters from all banks"
-                ] &&
-                outlierData[
-                  "z score compared to all quarters from all banks"
-                ].map((x, index) => <li className="border-[1px]">{x}</li>)}
-            </ul>
-          </div>
-          <div>
-            <h1
-              className="text-center"
-              style={{ height: "3.8rem", fontSize: "1rem" }}
-            >
-              z score compared to all banks in given quarter
-            </h1>
-            <ul className="">
-              {outlierData &&
-                outlierData[
-                  "z score compared to all banks in given quarter"
-                ] &&
-                outlierData[
-                  "z score compared to all banks in given quarter"
-                ].map((x, index) => <li className="border-[1px]">{x}</li>)}
-            </ul>
-          </div>
-          <div>
-            <h1
-              className="text-center "
-              style={{ height: "3.8rem", fontSize: "1rem" }}
-            >
-              z score compared to all quarters of given bank
-            </h1>
-            <ul className="">
-              {outlierData &&
-                outlierData[
-                  "z score compared to all quarters of given bank"
-                ] &&
-                outlierData[
-                  "z score compared to all quarters of given bank"
-                ].map((x, index) => <li className="border-[1px]">{x}</li>)}
-            </ul>
-          </div>
-          <div>
-            <h1
-              className="text-center"
-              style={{ height: "3.8rem", fontSize: "1rem" }}
-            >
-              outlier
-            </h1>
-            <ul className="">
-              {outlierData &&
-                outlierData["outlier"] &&
-                outlierData["outlier"].map((x, index) => (
-                  <li
-                    className={`border-[1px] ${
-                      x === false ? "text-green-500" : "text-red-500"
-                    }`}
-                  >
-                    {x === false ? "No" : "Yes"}
-                  </li>
-                ))}
-            </ul>
-          </div>
-        </div>
-      )}
-    </div> */}
+{inputRiskData && inputRiskData.quarter && (
+    <div>
+        <table className="table-custom w-150 p-3">
+            <thead>
+                <tr>
+                    <th>Bank</th>
+                    <th>Quarter</th>
+                    <th>Index compared to all quarters from all banks</th>
+                    <th>Index compared to all bank data in given quarter</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Input Bank</td>
+                    <td>{inputRiskData.quarter}</td>
+                    <td>
+                        {["Capital Adequacy:", "Assets:", "Management Capability:", "Earnings:", "Liquidity:", "Sensitivity:"].map((item, index) => (
+                            <div key={index}>{item} {inputRiskData["index compared to all quarters from all banks"][index]}</div>
+                        ))}
+                    </td>
+                    <td>
+                        {["Capital Adequacy:", "Assets:", "Management Capability:", "Earnings:", "Liquidity:", "Sensitivity:"].map((item, index) => (
+                            <div key={index}>{item} {inputRiskData["index compared to all bank data in given quarter"][index]}</div>
+                        ))}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+)}
+
+
+
+    
     {outlierData && outlierData.variables && outlierData.quarter && (
       <div className="my-5 w-full h-[500px] overflow-scroll">
         <h1 className="my-3">
@@ -722,10 +924,13 @@ return (
           <thead className="sticky top-0 bg-white">
             <tr>
               <th>Variable</th>
+              <th>Value</th>
+              <th>Total Mean</th>
               <th>z score compared to all quarters of all banks</th>
+              <th>Quarter mean</th>
               <th>z score compared to all banks in this quarter</th>
-
-              <th>Bank</th>
+              
+              <th>Outlier</th>
             </tr>
           </thead>
           <tbody>
@@ -734,33 +939,51 @@ return (
               outlierData.quarter &&
               outlierData.variables.map((x, index) => (
                 <tr key={index}>
-                  <td>{x}</td>
+                  <td> <OverlayTrigger
+                    placement="right"
+                    delay={{ show: 250, hide: 400 }}
+                    overlay={renderTooltip(index)}
+                  >
+                    <span>{cleaner.capitalizeFirstLetter(x)}</span>
+                    </OverlayTrigger></td>
+               
+                  <td>{cleaner.addCommasToNumber(formatNumberToDecimalPlaces(outlierData.self_value[index],3))}</td>
+                  <td>{cleaner.addCommasToNumber(formatNumberToDecimalPlaces(outlierData.totals_mean[index],3))}</td>
                   <td>
-                    <OverlayTrigger
-                      placement="right"
-                      delay={{ show: 250, hide: 400 }}
-                      overlay={renderTooltip(index)}
-                    >
-                      <span>
-                        {
-                          outlierData[
-                            "z score compared to all quarters from all banks"
-                          ][index]==='nan'?'-':outlierData[
-                            "z score compared to all quarters from all banks"
-                          ][index]
-                        }
-                      </span>
+                  <OverlayTrigger
+    placement="right"
+    delay={{ show: 250, hide: 400 }}
+    overlay={renderTooltipzscore(index, outlierData['z score compared to all quarters from all banks'][index])}
+  >
+                    <span>
+                    {
+                      
+                      formatNumberToDecimalPlaces(outlierData[
+                        "z score compared to all quarters from all banks"
+                      ][index],4)
+                    }
+                    </span>
                     </OverlayTrigger>
                   </td>
+                  <td>{cleaner.addCommasToNumber(formatNumberToDecimalPlaces(outlierData.quarters_mean[index],3))}</td>
                   <td>
+                  <OverlayTrigger
+    placement="right"
+    delay={{ show: 250, hide: 400 }}
+    overlay={renderTooltipzscore(index, outlierData['z score compared to all banks in given quarter'][index])}
+  >
+                    <span>
                     {
                       outlierData[
                         "z score compared to all banks in given quarter"
-                      ][index]==='nan'?'-':outlierData[
+                      ][index]==='nan'?'-':formatNumberToDecimalPlaces(outlierData[
                         "z score compared to all banks in given quarter"
-                      ][index]
+                      ][index],4)
                     }
+                    </span>
+                    </OverlayTrigger>
                   </td>
+                 
                   {
                     <td
                       className={`border-[1px] ${
@@ -778,6 +1001,36 @@ return (
         </table>
       </div>
     )}
+    {/**knn here */}
+    {knndata && knncomplete && (
+  <div className="my-5 w-full h-[500px] overflow-scroll">
+    <h1 className="my-3">
+      Knn table
+    </h1>
+    <table className="table-custom w-150 p-3">
+      <thead className="sticky top-0 bg-white">
+        <tr>
+        <th>Input Quarter</th>
+          <th>closest bank and quarter</th>
+          <th>2nd closest bank and quarter</th>
+          <th>3rd closest bank and quarter</th>
+        </tr>
+      </thead>
+      <tbody>
+        {Object.keys(knndata).map((quarter, index) => (
+          <tr key={index}>
+            <td>{quarter}</td>
+            <td>{knndata[quarter]['1st data'].bank}-{knndata[quarter]['1st data'].quarter}</td>
+            <td>{knndata[quarter]['2st data'].bank}-{knndata[quarter]['2st data'].quarter}</td>
+            <td>{knndata[quarter]['3st data'].bank}-{knndata[quarter]['3st data'].quarter}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
+
+
   </div>
 );
 };

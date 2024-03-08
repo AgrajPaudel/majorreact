@@ -50,7 +50,7 @@ const generateBarChart = (data, sortOrder) => {
   sortedData.data.bank = valueBankPairs.map(pair => pair.bank);
 
   const datasets = [{
-    label: sortedData.quarter,
+    label: sortedData.variable+' of '+sortedData.quarter ,
     data: sortedData.data.values,
     backgroundColor: colors[0],
   }];

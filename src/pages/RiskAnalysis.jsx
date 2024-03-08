@@ -22,6 +22,8 @@ export default function RiskAnalysis() {
     }
   }, [selectedType]);
 
+
+ 
   useEffect(() => {
     if (selectedType && selectedName) {
       const districts = data[selectedType] && data[selectedType][selectedName]
@@ -60,7 +62,7 @@ export default function RiskAnalysis() {
 
   return (
     <div>
-        <TestNavbar></TestNavbar>
+       
       <h1>This is the RiskAnalysis</h1>
       <select value={selectedType} onChange={handleTypeChange}>
         <option value="">Select Type</option>

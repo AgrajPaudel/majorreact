@@ -32,6 +32,7 @@ function executeKnnOutput(requestParams) {
   
         // Parse and return the content
         const resultContent = JSON.parse(fileContent);
+        
         return resultContent;
       } catch (error) {
         console.error(`Error parsing Python script output: ${error.message}`);

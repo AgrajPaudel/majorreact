@@ -50,6 +50,15 @@ const generateGraph = (selectedBanks) => {
 
   // Chart.js options for zooming
   const options = {
+    title: {
+      display: true,
+      text: selectedBanks[0].bank, // Title text
+      position: 'top', // Position at the top
+      align: 'center', // Align at the center
+      font: {
+        size: 16, // Adjust font size as needed
+      },
+    },
     plugins: {
       zoom: {
         zoom: {
@@ -69,7 +78,7 @@ const generateGraph = (selectedBanks) => {
     },
   };
 
-  return <Line data={data} options={options} />;
+  return <Line data={data} option={options} />;
 };
 
 function CreateLineChart( graphDataList ) {
@@ -112,7 +121,12 @@ function CreateLineChart( graphDataList ) {
         onChange={handleBankChange}
       />
 
-     
+        {/*title yeta */}
+        {selectedBanks.length > 0 && (
+        <h3 style={{ textAlign: "center" }}>
+          {graphDataList.data[0].variable} 
+        </h3>
+      )}
 
       {/* Render the Line Chart based on the selected banks */}
       {selectedBanks.length > 0 && generateGraph(selectedBanks)}

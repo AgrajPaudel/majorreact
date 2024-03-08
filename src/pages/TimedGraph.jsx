@@ -113,6 +113,47 @@ export default function TimedGraph() {
   //dialog box
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  //combine table
+  const [compareTableData, setCompareTableData] = useState(null);
+
+  // Function to handle comparison and creation of the new table
+  const handleCompareTables = () => {
+  if (!sData || !idata) {
+    console.error("Data not available for comparison");
+    return;
+  }
+
+  // Find common variables between sData and idata
+  const commonVariables = sData.variable.filter((variable) =>
+    idata.variable.includes(variable)
+  );
+
+  // Filter sData and idata to include only common variables
+  const sDataFiltered = sData.variable.reduce((acc, variable, index) => {
+    if (commonVariables.includes(variable)) {
+      acc[variable] = sData.values[index];
+    }
+    return acc;
+  }, {});
+
+  const idataFiltered = idata.variable.reduce((acc, variable, index) => {
+    if (commonVariables.includes(variable)) {
+      acc[variable] = idata.values[index];
+    }
+    return acc;
+  }, {});
+
+  // Combine filtered sData and idata into a new array
+  const combinedData = commonVariables.map((variable) => ({
+    variable,
+    sValue: sDataFiltered[variable],
+    iValue: idataFiltered[variable],
+  }));
+
+  // Update state to render the new table
+  setCompareTableData(combinedData);
+};
+
  
 
   const closeModal = () => {
@@ -415,7 +456,7 @@ useEffect(() => {
       // Check if the response is successful (status code 200)
       if (response.ok) {
         // Parse the response as text
-        const result = await response.text();
+        const result = await response.json();
 
         // Display the result in your component as needed
         console.log(result);
@@ -552,7 +593,7 @@ useEffect(() => {
   return (
     <div className="my-10 container">
       <div>
-        <TestNavbar></TestNavbar>
+        
         <h1>this is the timed ggggraph</h1>
   
         <div className="flex gap-x-16">
@@ -774,11 +815,19 @@ useEffect(() => {
                   sData.variable.map((x, index) => (
                     <tr key={index}>
                       <td>{x}</td>
-                      <td>{sData.values[index]==='nan'?'-':sData.values[index]}</td>
+                      <td>
+                        <OverlayTrigger
+                          placement="right"
+                          delay={{ show: 250, hide: 400 }}
+                          overlay={renderTooltip(index)}
+                        >
+                          <span>{sData.values[index]==='nan'?'-':sData.values[index]}</span>
+                        </OverlayTrigger>
+                      </td>
                     </tr>
                   ))}
                 {/*idata*/ }
-                {idata && idata.variable && idata.values && (
+                {idata && idata.variable  && (
           <div className="my-5">
             <h1 className="my-3">
               Table from the given input {idata.quarter}.
@@ -817,6 +866,52 @@ useEffect(() => {
             </table>
           </div>
         )}
+
+        {/* Button to compare tables */}
+      <button onClick={handleCompareTables} className="btn btn-primary">
+        Compare Tables
+      </button>
+
+      {/* Render the comparison table if compareTableData is available */}
+      {compareTableData && (
+        <div className="my-5">
+          <h1 className="my-3">Comparison Table</h1>
+          <table className="table-custom w-150 p-3">
+            <thead>
+              <tr>
+                <th>Variable</th>
+                <th>Dataset Value</th>
+                <th>Input Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {compareTableData.map((data, index) => (
+                <tr key={index}>
+                  <td>{data.variable}</td>
+                  <td>
+                    <OverlayTrigger
+                      placement="right"
+                      delay={{ show: 250, hide: 400 }}
+                      overlay={renderTooltip(index)}
+                    >
+                      <span>{data.sValue === 'nan' ? '-' : data.sValue}</span>
+                    </OverlayTrigger>
+                  </td>
+                  <td>
+                    <OverlayTrigger
+                      placement="right"
+                      delay={{ show: 250, hide: 400 }}
+                      overlay={renderTooltip(index)}
+                    >
+                      <span>{data.iValue === 'nan' ? '-' : data.iValue}</span>
+                    </OverlayTrigger>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       </div>
     </div>
   );

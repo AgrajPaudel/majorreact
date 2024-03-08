@@ -28,9 +28,9 @@ const upload = multer({ storage: storage });
 app.use(cors());
 app.use(express.static('build'));
 // Define a wildcard route that serves 'index.html' for all routes
-app.get('/*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// app.get('/*', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// });
 
 // Start the server
 const PORT = process.env.PORT || 5000;
@@ -38,7 +38,7 @@ const PORT = process.env.PORT || 5000;
 
 app.use(bodyParser.json()); // for parsing application/json
 
-// Your existing route for serving the React app
+//Your existing route for serving the React app
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -123,7 +123,7 @@ await Promise.all(filesInAccessToken.map(async (file) => {
     await fs.promises.unlink(filePath);
   }
 }));
-    console.log('bleh')
+  
 
     // After deleting files, remove the folder itself
     deleteDirectoryContents(path.join(access_token_path,'z output'));
@@ -167,6 +167,7 @@ app.get('/download-file/:access_token/:fileName', (req, res) => {
 
 //get file list
 app.get('/get-files/:access_token', (req, res) => {
+  console.log('sadadssadsasd');
   const { access_token } = req.params;
   const directoryPath = `D:/python tesseract/${access_token}/z output/`;
 
@@ -175,6 +176,7 @@ app.get('/get-files/:access_token', (req, res) => {
   const fs = require('fs');
 
   fs.readdir(directoryPath, (err, files) => {
+    console.log('sadadssadsasd');
     if (err) {
       console.error('Error reading directory:', err);
       res.status(500).send('Internal Server Error');
